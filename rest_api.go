@@ -18,7 +18,7 @@ import (
 func StartServer() (http.Server, *echo.Echo, *mysql.DBHandler, error) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	embed := word2vec.GetWord2Vec()
-	dbHandler1 := mysql.OpenDB()
+	dbHandler1 := mysql.OpenDB("secure/mysql", "secure/keys.xml", "mysql/DatabaseInfo.xml")
 
 	e := echo.New()
 	e.GET("/api/v0/check", func(c echo.Context) error {

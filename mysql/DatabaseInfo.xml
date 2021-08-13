@@ -1,0 +1,5 @@
+<DBInfo>
+ <DBType>mysql</DBType>
+ <User>myuser</User>
+ <Connection>@tcp(127.0.0.1:60575)/my_db</Connection>
+</DBInfo>

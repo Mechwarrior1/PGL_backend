@@ -3,9 +3,12 @@ package mysql
 import (
 	"context"
 	"database/sql"
+	"encoding/xml"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -97,11 +100,35 @@ var (
 // 		return key1
 // 	}
 // }
+func getDatabaseInfo(dbInfoFileName string) (string, string, string) {
+	type DBInfo struct {
+		DBType     string
+		User       string
+		Connection string
+	}
+
+	xmlFile, _ := os.Open(dbInfoFileName)
+	defer xmlFile.Close()
+
+	var dbInfo DBInfo
+	byteValue, _ := ioutil.ReadAll(xmlFile)
+	xml.Unmarshal(byteValue, &dbInfo)
+	return dbInfo.DBType, dbInfo.User, dbInfo.Connection
+}
 
 // Opens db and returns a struct to access it
-func OpenDB() DBHandler {
-	pass := string(encrypt.DecryptFromFile("secure/mysql", "secure/keys.xml"))
-	db, err := sql.Open("mysql", "myuser:"+pass+"@tcp(127.0.0.1:60575)/my_db")
+func OpenDB(encrptedFileName string, keyFileName string, dbInfoFileName string) DBHandler {
+
+	// pass := string(encrypt.DecryptFromFile("secure/mysql", "secure/keys.xml"))
+	pass := string(encrypt.DecryptFromFile(encrptedFileName, keyFileName))
+
+	dbType, user, connection := getDatabaseInfo(dbInfoFileName)
+	// fmt.Println(dbType, user+":"+pass+connection, encrptedFileName, keyFileName, dbInfoFileName)
+
+	db, err := sql.Open(dbType, user+":"+pass+connection)
+
+	// db, err := sql.Open("mysql", "myuser:"+pass+"@tcp(127.0.0.1:60575)/my_db")
+
 	if err != nil {
 		panic(err.Error())
 	} else {
