@@ -1,12 +1,13 @@
 package controller
 
 import (
-	"apiserver/mysql"
-	"apiserver/word2vec"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/Mechwarrior1/PGL_backend/mysql"
+	"github.com/Mechwarrior1/PGL_backend/word2vec"
 
 	"github.com/labstack/echo"
 	"golang.org/x/crypto/bcrypt"

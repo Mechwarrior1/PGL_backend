@@ -1,8 +1,6 @@
 package mysql
 
 import (
-	"apiserver/encrypt"
-	"apiserver/word2vec"
 	"context"
 	"database/sql"
 	"errors"
@@ -12,6 +10,9 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/Mechwarrior1/PGL_backend/encrypt"
+	"github.com/Mechwarrior1/PGL_backend/word2vec"
 
 	_ "github.com/go-sql-driver/mysql" // go mod init api_server.go
 )

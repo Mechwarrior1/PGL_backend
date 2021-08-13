@@ -1,13 +1,14 @@
 package main
 
 import (
-	"apiserver/controller"
-	"apiserver/mysql"
-	"apiserver/word2vec"
 	"crypto/tls"
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/Mechwarrior1/PGL_backend/controller"
+	"github.com/Mechwarrior1/PGL_backend/mysql"
+	"github.com/Mechwarrior1/PGL_backend/word2vec"
 
 	_ "github.com/go-sql-driver/mysql" // go mod init api_server.go
 	"github.com/labstack/echo"

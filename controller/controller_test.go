@@ -2,9 +2,6 @@ package controller
 
 //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
 import (
-	"apiserver/encrypt"
-	"apiserver/mysql"
-	"apiserver/word2vec"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -14,6 +11,10 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+
+	"github.com/Mechwarrior1/PGL_backend/encrypt"
+	"github.com/Mechwarrior1/PGL_backend/mysql"
+	"github.com/Mechwarrior1/PGL_backend/word2vec"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	_ "github.com/go-sql-driver/mysql" // go mod init api_server.go
