@@ -1,6 +1,5 @@
 package controller
 
-//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
 import (
 	"database/sql"
 	"encoding/json"
