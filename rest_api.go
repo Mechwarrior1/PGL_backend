@@ -4,21 +4,43 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/Mechwarrior1/PGL_backend/controller"
+	"github.com/Mechwarrior1/PGL_backend/model"
 	"github.com/Mechwarrior1/PGL_backend/mysql"
+	"github.com/Mechwarrior1/PGL_backend/postgres"
 	"github.com/Mechwarrior1/PGL_backend/word2vec"
 
 	_ "github.com/go-sql-driver/mysql" // go mod init api_server.go
+	"github.com/joho/godotenv"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
 
-func StartServer() (http.Server, *echo.Echo, *mysql.DBHandler, error) {
+func StartServer() (http.Server, *echo.Echo, *model.DBHandler, error) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	embed := word2vec.GetWord2Vec()
-	dbHandler1 := mysql.OpenDB("secure/mysql", "secure/keys.xml", "mysql/DatabaseInfo.xml")
+	embed := word2vec.GetWord2Vec("word2vec/GoogleNews-vectors-negative300-SLIM.bin") // credits: https://github.com/eyaler/word2vec-slim
+
+	err := godotenv.Load("go.env")
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	port := os.Getenv("PORT")
+	database := os.Getenv("DBTYPE")
+
+	dbHandler1 := model.DBHandler{nil,
+		os.Getenv("API_KEY"),
+		false}
+
+	switch database {
+	case "postgres":
+		dbHandler1.DBController = postgres.OpenDB()
+	case "mysql":
+		dbHandler1.DBController = mysql.OpenDB()
+	}
 
 	e := echo.New()
 	e.GET("/api/v0/check", func(c echo.Context) error {
@@ -72,46 +94,32 @@ func StartServer() (http.Server, *echo.Echo, *mysql.DBHandler, error) {
 	// })
 
 	// go routine for checking mysql connection, will update readiness if connected
-	go func(dbHandler *mysql.DBHandler) {
+	go func(dbHandler *model.DBHandler) {
 		for {
-			time.Sleep(10 * time.Second)
-			_, err1 := dbHandler1.GetSingleRecord("ItemListing", "WHERE ID = ?", "000001")
+			_, err1 := dbHandler1.DBController.GetSingleRecord("ItemListing", "WHERE ID", "000001")
 			if err1 != nil {
 				dbHandler.ReadyForTraffic = false
 				fmt.Println("unable to contact mysql server", err1.Error())
 			} else {
 				dbHandler.ReadyForTraffic = true
 			}
+			time.Sleep(120 * time.Second)
 		}
 	}(&dbHandler1)
 
-	e.Use(func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			if !dbHandler1.ReadyForTraffic {
-				fmt.Println("API is accessed, but is unable to contact sql server")
-				responseJson := mysql.DataPacketSimple{
-					"not ready for traffic",
-					"false",
-				}
-				return c.JSON(503, responseJson) // encode to json and send
-			}
-			return next(c)
-		}
-	})
-
-	port := "5555"
 	fmt.Println("listening at port " + port)
 	s := http.Server{Addr: ":" + port, Handler: e}
 
 	e.Use(middleware.Recover())
-	// e.Use(middleware.Logger())
+	e.Use(middleware.Logger())
 	return s, e, &dbHandler1, nil
 }
 
 func main() {
 	s, e, dbHandler1, _ := StartServer()
-	defer dbHandler1.DB.Close()
-	if err := s.ListenAndServeTLS("secure//cert.pem", "secure//key.pem"); err != nil && err != http.ErrServerClosed {
+	defer dbHandler1.DBController.ReturnDB().Close()
+	// if err := s.ListenAndServeTLS("secure//cert.pem", "secure//key.pem"); err != nil && err != http.ErrServerClosed {
+	if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		e.Logger.Fatal(err)
 	}
 }

@@ -1,7 +1,6 @@
 package mysql
 
 import (
-	"database/sql"
 	"log"
 	"testing"
 
@@ -9,21 +8,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func NewMock() (*sql.DB, sqlmock.Sqlmock) {
+func NewMock() (DBHandlerMysql, sqlmock.Sqlmock) {
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		log.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
 	}
 
-	return db, mock
+	dbHandler1 := DBHandlerMysql{db}
+
+	return dbHandler1, mock
 }
 
 //tested getting item with ID
 func TestGetSingleRecord(t *testing.T) {
-	db, mock := NewMock()
-	dbHandler1 := DBHandler{db, "", true}
+	dbHandler1, mock := NewMock()
 	defer func() {
-		dbHandler1.DB.Close()
+		(&dbHandler1).ReturnDB().Close()
 	}()
 
 	dbTableAll := []string{"UserInfo", "UserSecret", "ItemListing", "CommentUser", "CommentItem"}
@@ -31,7 +31,7 @@ func TestGetSingleRecord(t *testing.T) {
 	rows := sqlmock.NewRows([]string{"ID"})
 
 	for _, dbTable := range dbTableAll {
-		query := "Select \\* FROM my_db." + dbTable + " WHERE id = \\?"
+		query := "Select \\* FROM " + dbTable + " WHERE id = \\?"
 
 		switch dbTable {
 
@@ -58,25 +58,24 @@ func TestGetSingleRecord(t *testing.T) {
 
 		mock.ExpectQuery(query).WithArgs("000000").WillReturnRows(rows)
 
-		user, err := dbHandler1.GetSingleRecord(dbTable, "WHERE id = ?", "000000")
+		user, err := dbHandler1.GetSingleRecord(dbTable, "WHERE id ", "000000")
 		assert.NotNil(t, user)
 		assert.NoError(t, err)
 	}
 }
 
 func TestInsertRecord1(t *testing.T) {
-	db, mock := NewMock()
-	dbHandler1 := DBHandler{db, "", true}
+	dbHandler1, mock := NewMock()
 	defer func() {
-		dbHandler1.DB.Close()
+		(&dbHandler1).ReturnDB().Close()
 	}()
 
 	dbTable := "UserInfo"
 
-	query := "INSERT INTO my_db." + dbTable + " VALUES \\(\\?, \\?, \\?, \\?, \\?\\)"
+	query := "INSERT INTO " + dbTable + " VALUES \\(\\?, \\?, \\?, \\?, \\?\\)"
 
 	prep := mock.ExpectPrepare(query)
-	prep.ExpectExec().WithArgs("000001", "john", "20-7-2021", "20-7-2021", "nil").WillReturnResult(sqlmock.NewResult(0, 1))
+	prep.ExpectExec().WithArgs(1, "john", "20-7-2021", "20-7-2021", "nil").WillReturnResult(sqlmock.NewResult(0, 1))
 
 	newMap := make(map[string]string)
 
@@ -85,23 +84,22 @@ func TestInsertRecord1(t *testing.T) {
 	newMap["DateJoin"] = "20-7-2021"
 	newMap["CommentItem"] = "nil"
 
-	err := dbHandler1.InsertRecord(dbTable, newMap, "000001")
+	err := dbHandler1.InsertRecord(dbTable, newMap, 1)
 	assert.NoError(t, err)
 }
 
 func TestInsertRecord2(t *testing.T) {
-	db, mock := NewMock()
-	dbHandler1 := DBHandler{db, "", true}
+	dbHandler1, mock := NewMock()
 	defer func() {
-		dbHandler1.DB.Close()
+		(&dbHandler1).ReturnDB().Close()
 	}()
 
 	dbTable := "UserSecret"
 
-	query := "INSERT INTO my_db." + dbTable + " VALUES \\(\\?, \\?, \\?, \\?, \\?\\)"
+	query := "INSERT INTO " + dbTable + " VALUES \\(\\?, \\?, \\?, \\?, \\?\\)"
 
 	prep := mock.ExpectPrepare(query)
-	prep.ExpectExec().WithArgs("000001", "john", "20-7-2021", "20-7-2021", "nil").WillReturnResult(sqlmock.NewResult(0, 1))
+	prep.ExpectExec().WithArgs(1, "john", "20-7-2021", "20-7-2021", "nil").WillReturnResult(sqlmock.NewResult(0, 1))
 
 	newMap := make(map[string]string)
 
@@ -110,23 +108,22 @@ func TestInsertRecord2(t *testing.T) {
 	newMap["IsAdmin"] = "20-7-2021"
 	newMap["CommentItem"] = "nil"
 
-	err := dbHandler1.InsertRecord(dbTable, newMap, "000001")
+	err := dbHandler1.InsertRecord(dbTable, newMap, 1)
 	assert.NoError(t, err)
 }
 
 func TestInsertRecord3(t *testing.T) {
-	db, mock := NewMock()
-	dbHandler1 := DBHandler{db, "", true}
+	dbHandler1, mock := NewMock()
 	defer func() {
-		dbHandler1.DB.Close()
+		(&dbHandler1).ReturnDB().Close()
 	}()
 
 	dbTable := "ItemListing"
 
-	query := "INSERT INTO my_db." + dbTable + " VALUES \\(\\?, \\?, \\?, \\?, \\?, \\?, \\?, \\?, \\?, \\?\\)"
+	query := "INSERT INTO " + dbTable + " VALUES \\(\\?, \\?, \\?, \\?, \\?, \\?, \\?, \\?, \\?, \\?\\)"
 
 	prep := mock.ExpectPrepare(query)
-	prep.ExpectExec().WithArgs("000001", "john", "johnee", "nil", "nil", "nil", "nil", "nil", "nil", "nil").WillReturnResult(sqlmock.NewResult(0, 1))
+	prep.ExpectExec().WithArgs(1, "john", "johnee", "nil", "nil", "nil", "nil", "nil", "nil", "nil").WillReturnResult(sqlmock.NewResult(0, 1))
 
 	newMap := make(map[string]string)
 
@@ -140,23 +137,21 @@ func TestInsertRecord3(t *testing.T) {
 	newMap["ContactMeetInfo"] = "nil"
 	newMap["Completion"] = "nil"
 
-	err := dbHandler1.InsertRecord(dbTable, newMap, "000001")
+	err := dbHandler1.InsertRecord(dbTable, newMap, 1)
 	assert.NoError(t, err)
 }
 
 func TestInsertRecord4(t *testing.T) {
-	db, mock := NewMock()
-	dbHandler1 := DBHandler{db, "", true}
+	dbHandler1, mock := NewMock()
 	defer func() {
-		dbHandler1.DB.Close()
+		(&dbHandler1).ReturnDB().Close()
 	}()
-
 	dbTable := "CommentUser"
 
-	query := "INSERT INTO my_db." + dbTable + " VALUES \\(\\?, \\?, \\?, \\?, \\?\\)"
+	query := "INSERT INTO " + dbTable + " VALUES \\(\\?, \\?, \\?, \\?, \\?\\)"
 
 	prep := mock.ExpectPrepare(query)
-	prep.ExpectExec().WithArgs("000001", "john", "johnee", "20-7-2021", "nil").WillReturnResult(sqlmock.NewResult(0, 1))
+	prep.ExpectExec().WithArgs(1, "john", "johnee", "20-7-2021", "nil").WillReturnResult(sqlmock.NewResult(0, 1))
 
 	newMap := make(map[string]string)
 
@@ -165,23 +160,22 @@ func TestInsertRecord4(t *testing.T) {
 	newMap["Date"] = "20-7-2021"
 	newMap["CommentItem"] = "nil"
 
-	err := dbHandler1.InsertRecord(dbTable, newMap, "000001")
+	err := dbHandler1.InsertRecord(dbTable, newMap, 1)
 	assert.NoError(t, err)
 }
 
 func TestInsertRecord5(t *testing.T) {
-	db, mock := NewMock()
-	dbHandler1 := DBHandler{db, "", true}
+	dbHandler1, mock := NewMock()
 	defer func() {
-		dbHandler1.DB.Close()
+		(&dbHandler1).ReturnDB().Close()
 	}()
 
 	dbTable := "CommentItem"
 
-	query := "INSERT INTO my_db." + dbTable + " VALUES \\(\\?, \\?, \\?, \\?, \\?\\)"
+	query := "INSERT INTO " + dbTable + " VALUES \\(\\?, \\?, \\?, \\?, \\?\\)"
 
 	prep := mock.ExpectPrepare(query)
-	prep.ExpectExec().WithArgs("000001", "john", "cartoon", "20-7-2021", "nil").WillReturnResult(sqlmock.NewResult(0, 1))
+	prep.ExpectExec().WithArgs(1, "john", "cartoon", "20-7-2021", "nil").WillReturnResult(sqlmock.NewResult(0, 1))
 
 	newMap := make(map[string]string)
 
@@ -190,15 +184,14 @@ func TestInsertRecord5(t *testing.T) {
 	newMap["Date"] = "20-7-2021"
 	newMap["CommentItem"] = "nil"
 
-	err := dbHandler1.InsertRecord(dbTable, newMap, "000001")
+	err := dbHandler1.InsertRecord(dbTable, newMap, 1)
 	assert.NoError(t, err)
 }
 
 func TestEditRecord1(t *testing.T) {
-	db, mock := NewMock()
-	dbHandler1 := DBHandler{db, "", true}
+	dbHandler1, mock := NewMock()
 	defer func() {
-		dbHandler1.DB.Close()
+		(&dbHandler1).ReturnDB().Close()
 	}()
 
 	dbTable := "UserInfo"
@@ -219,10 +212,9 @@ func TestEditRecord1(t *testing.T) {
 }
 
 func TestEditRecord2(t *testing.T) {
-	db, mock := NewMock()
-	dbHandler1 := DBHandler{db, "", true}
+	dbHandler1, mock := NewMock()
 	defer func() {
-		dbHandler1.DB.Close()
+		(&dbHandler1).ReturnDB().Close()
 	}()
 
 	dbTable := "ItemListing"
@@ -247,10 +239,9 @@ func TestEditRecord2(t *testing.T) {
 }
 
 func TestEditRecord3(t *testing.T) {
-	db, mock := NewMock()
-	dbHandler1 := DBHandler{db, "", true}
+	dbHandler1, mock := NewMock()
 	defer func() {
-		dbHandler1.DB.Close()
+		(&dbHandler1).ReturnDB().Close()
 	}()
 
 	dbTable := "CommentUser"
@@ -270,10 +261,9 @@ func TestEditRecord3(t *testing.T) {
 }
 
 func TestEditRecord4(t *testing.T) {
-	db, mock := NewMock()
-	dbHandler1 := DBHandler{db, "", true}
+	dbHandler1, mock := NewMock()
 	defer func() {
-		dbHandler1.DB.Close()
+		(&dbHandler1).ReturnDB().Close()
 	}()
 
 	dbTable := "CommentItem"
@@ -281,11 +271,11 @@ func TestEditRecord4(t *testing.T) {
 	query := "UPDATE " + dbTable + " SET CommentItem=\\? WHERE ID=\\?"
 
 	prep := mock.ExpectPrepare(query)
-	prep.ExpectExec().WithArgs("comment", "000001").WillReturnResult(sqlmock.NewResult(0, 1))
+	prep.ExpectExec().WithArgs("comment", "1").WillReturnResult(sqlmock.NewResult(0, 1))
 
 	newMap := make(map[string]string)
 
-	newMap["ID"] = "000001"
+	newMap["ID"] = "1"
 	newMap["CommentItem"] = "comment"
 
 	err := dbHandler1.EditRecord(dbTable, newMap)
@@ -293,32 +283,30 @@ func TestEditRecord4(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	db, mock := NewMock()
-	dbHandler1 := DBHandler{db, "", true}
+	dbHandler1, mock := NewMock()
 	defer func() {
-		dbHandler1.DB.Close()
+		(&dbHandler1).ReturnDB().Close()
 	}()
 
 	dbTable := "ItemListing"
 	query := "DELETE FROM " + dbTable + " WHERE id = \\?"
 
 	prep := mock.ExpectPrepare(query)
-	prep.ExpectExec().WithArgs("00001").WillReturnResult(sqlmock.NewResult(0, 1))
+	prep.ExpectExec().WithArgs(1).WillReturnResult(sqlmock.NewResult(0, 1))
 
-	err := dbHandler1.DeleteRecord(dbTable, "000001")
+	err := dbHandler1.DeleteRecord(dbTable, 1)
 	assert.Error(t, err)
 }
 
 func TestGetMaxID(t *testing.T) {
 	// load variables
-	db, mock := NewMock()
-	dbHandler1 := DBHandler{db, "", true}
+	dbHandler1, mock := NewMock()
 	defer func() {
-		dbHandler1.DB.Close()
+		(&dbHandler1).ReturnDB().Close()
 	}()
 
 	// mock for querying
-	query := "SELECT MAX\\(ID\\) FROM my_db.UserSecret" //for MaxID query
+	query := "SELECT MAX\\(ID\\) FROM UserSecret" //for MaxID query
 	rows := mock.NewRows([]string{"ID"}).
 		AddRow("000001") //apparently there is no logic and does not check for largest, willreturnrows directly just returns
 	mock.ExpectQuery(query).WillReturnRows(rows)
@@ -330,20 +318,19 @@ func TestGetMaxID(t *testing.T) {
 
 func TestGetUsername(t *testing.T) {
 	// load variables
-	db, mock := NewMock()
-	dbHandler1 := DBHandler{db, "", true}
+	dbHandler1, mock := NewMock()
 	defer func() {
-		dbHandler1.DB.Close()
+		(&dbHandler1).ReturnDB().Close()
 	}()
 
 	// mock for querying
 
-	query := "SELECT Username FROM my_db.UserSecret WHERE ID=000001"
+	query := "SELECT Username FROM UserSecret WHERE ID=?"
 	rows := mock.NewRows([]string{"Username"}).
 		AddRow("john") //apparently there is no logic and does not check for largest, willreturnrows directly just returns
 	mock.ExpectQuery(query).WillReturnRows(rows)
 
-	result, err := dbHandler1.GetUsername("UserSecret", "000001")
+	result, err := dbHandler1.GetUsername("UserSecret", 1)
 	assert.Equal(t, result, "john", "should be the same")
 	assert.NoError(t, err)
 }

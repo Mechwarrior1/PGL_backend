@@ -301,15 +301,16 @@ func (e *Embeddings) CompareEmbeddingAll(tarWordVec []float32) ([]string, []floa
 
 // opens the Word2vec binary file and loads it into an array and map
 // returns a struct with the embeddings array and word -> index map
-func GetWord2Vec() *Embeddings {
-	fileLoc := "C:/Users/Fong/Desktop/GoogleNews-vectors-negative300-SLIM.bin"
+func GetWord2Vec(fileLoc string) *Embeddings {
 	// fileLoc := "C:/Users/Fong/Desktop/GoogleNews-vectors-negative300.bin"
-	fmt.Println(fileLoc)
-
+	
 	f, err := os.Open(fileLoc)
 	if err != nil {
-		fmt.Println("error, file not found:", fileLoc)
+		fmt.Println("error, word2vec bin file not found:", fileLoc)
+	} else{
+		fmt.Println("word2vec bin file found")
 	}
+	
 	defer f.Close()
 
 	r := bufio.NewReader(f)
