@@ -1,6 +1,17 @@
-# PGL_backend
-backend for GORecycle
+# GORecycle Frontend
 
+This is a course project, a prototype website
+
+## The Idea
+A marketplace for people to post functional items to be given away, an organisation can take for further distribution or an individual can then pick them up. Helps to reduce waste and improve opportunities for reuse of items/materials
+
+
+## Heroku and Frontend
+hosted on heroku: http://gorecycle.herokuapp.com/
+Frontend: https://github.com/Mechwarrior1/PGL_frontend
+
+
+## API
 | API | Params | Query | Payload | Return | Comments |
 | --- | --- | --- | --- | --- | --- |
 | /api/v0/health | None | None | None | StatusOK| see if server is online |
