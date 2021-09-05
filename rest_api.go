@@ -19,9 +19,8 @@ import (
 	"github.com/labstack/echo/middleware"
 )
 
-func StartServer() (http.Server, *echo.Echo, *model.DBHandler, error) {
+func StartServer(embed *word2vec.Embeddings) (http.Server, *echo.Echo, *model.DBHandler, error) {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	embed := word2vec.GetWord2Vec("word2vec/GoogleNews-vectors-negative300-SLIM.bin") // credits: https://github.com/eyaler/word2vec-slim
 
 	err := godotenv.Load("go.env")
 	if err != nil {
@@ -116,7 +115,9 @@ func StartServer() (http.Server, *echo.Echo, *model.DBHandler, error) {
 }
 
 func main() {
-	s, e, dbHandler1, _ := StartServer()
+	embed := word2vec.GetWord2Vec("word2vec/GoogleNews-vectors-negative300-SLIM.bin") // credits: https://github.com/eyaler/word2vec-slim
+
+	s, e, dbHandler1, _ := StartServer(embed)
 	defer dbHandler1.DBController.ReturnDB().Close()
 	// if err := s.ListenAndServeTLS("secure//cert.pem", "secure//key.pem"); err != nil && err != http.ErrServerClosed {
 	if err := s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
